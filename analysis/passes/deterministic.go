@@ -1,7 +1,6 @@
 package deterministic
 
 import (
-	"fmt"
 	"go/ast"
 
 	"golang.org/x/tools/go/analysis"
@@ -34,30 +33,31 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		if len(functionDecl.Type.Params.List) < 1 {
 			return
 		}
-		
+
 		currentExpr := functionDecl.Type.Params.List[0].Type.(*ast.SelectorExpr)
 		currentClass := currentExpr.X.(*ast.Ident)
 
 		// If the first argument isn't, by specification, what we expect to be a workflows first argument, then exit
-		if (!(currentClass.Name == "workflow" && currentExpr.Sel.Name == "Context" )){
+		if !(currentClass.Name == "workflow" && currentExpr.Sel.Name == "Context") {
 			return
 		}
 
 		// If everything else passed, perform an ast analysis on the function body
 		ast.Inspect(functionDecl.Body, func(node ast.Node) bool {
 			functionCall, isFunctionCall := node.(*ast.CallExpr)
-			if (isFunctionCall){
+			if isFunctionCall {
 				selector, isSelector := functionCall.Fun.(*ast.SelectorExpr)
-				if (isSelector){
-					identifier, isIdentifier := sel.X.(*ast.Ident)
-					if isIdentifier{
-					 		if (identifier.Name == "time" && (selector.Sel.Name == "Now" || selector.Sel.Name == "Sleep")) {
+				if isSelector {
+					identifier, isIdentifier := selector.X.(*ast.Ident)
+					if isIdentifier {
+						if identifier.Name == "time" && (selector.Sel.Name == "Now" || selector.Sel.Name == "Sleep") {
 							pass.Reportf(functionCall.Fun.Pos(), "Deterministic constraint violation, please consider using temporal sdk functions for managing time")
 						}
 					}
 				}
 			}
+			return false
+		})
 	})
-
 	return nil, nil
 }
