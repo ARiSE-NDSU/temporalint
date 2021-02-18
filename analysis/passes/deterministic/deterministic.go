@@ -1,15 +1,18 @@
 package deterministic
 
 import (
+	"fmt"
 	"go/ast"
 
+	"github.com/ansnadeem/temporalint/utils"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+// Analyzer The analyzer object for determinism analysis of temporal workflows
 var Analyzer = &analysis.Analyzer{
-	Name:     "time",
+	Name:     "Determinism",
 	Doc:      "reports time related violations in temporal workflows",
 	Run:      run,
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
@@ -34,11 +37,15 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			return
 		}
 
-		currentExpr := functionDecl.Type.Params.List[0].Type.(*ast.SelectorExpr)
-		currentClass := currentExpr.X.(*ast.Ident)
-
 		// If the first argument isn't, by specification, what we expect to be a workflows first argument, then exit
-		if !(currentClass.Name == "workflow" && currentExpr.Sel.Name == "Context") {
+
+		//currentExpr := functionDecl.Type.Params.List[0].Type.(*ast.SelectorExpr)
+		//currentClass := currentExpr.X.(*ast.Ident)
+		//if !(currentClass.Name == "workflow" && currentExpr.Sel.Name == "Context") {
+		//	return
+		//}
+		fmt.Print(pass.TypesInfo.TypeOf(functionDecl.Type.Params.List[0].Type).String())
+		if pass.TypesInfo.TypeOf(functionDecl.Type.Params.List[0].Type).String() != utils.TemporalContextType {
 			return
 		}
 
@@ -56,7 +63,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					}
 				}
 			}
-			return false
+			return true
 		})
 	})
 	return nil, nil

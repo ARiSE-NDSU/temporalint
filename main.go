@@ -1,4 +1,4 @@
-package main
+package temporalint
 
 import (
 	"github.com/ansnadeem/temporalint/analysis/passes/deterministic"
