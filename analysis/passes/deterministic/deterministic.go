@@ -51,17 +51,22 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 		// If everything else passed, perform an ast analysis on the function body
 		ast.Inspect(functionDecl.Body, func(node ast.Node) bool {
-			functionCall, isFunctionCall := node.(*ast.CallExpr)
-			if isFunctionCall {
-				selector, isSelector := functionCall.Fun.(*ast.SelectorExpr)
-				if isSelector {
-					identifier, isIdentifier := selector.X.(*ast.Ident)
-					if isIdentifier {
+			if functionCall, isFunctionCall := node.(*ast.CallExpr); isFunctionCall {
+				if selector, isSelector := functionCall.Fun.(*ast.SelectorExpr); isSelector {
+					if identifier, isIdentifier := selector.X.(*ast.Ident); isIdentifier {
 						if identifier.Name == "time" && (selector.Sel.Name == "Now" || selector.Sel.Name == "Sleep") {
 							pass.Reportf(functionCall.Fun.Pos(), "Deterministic constraint violation, please consider using temporal sdk functions for managing time")
 						}
 					}
 				}
+			}
+
+			if routineCall, isRoutineCall := node.(*ast.GoStmt); isRoutineCall {
+				pass.Reportf(routineCall.Pos(), "Deterministic constraint violation, please consider using workflow.Go for Go routines")
+			}
+
+			if channelAccess, isChannelAccess := node.(*ast.ChanType); isChannelAccess {
+				pass.Reportf(channelAccess.Pos(), "Deterministic constraint violation, please consider using workflow.Channel for Go channels")
 			}
 			return true
 		})

@@ -6,6 +6,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func testWorkflow(ctx workflow.Context) {
+func workflowWithTime(ctx workflow.Context) {
 	time.Sleep(1)
 }
